@@ -1,10 +1,9 @@
 package com.zetcode;
 
 import com.zetcode.sprite.Alien;
+
 import com.zetcode.sprite.Player;
 import com.zetcode.sprite.Shot;
-
-//import main.GUI.MyChangeListener;
 
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
@@ -32,7 +31,13 @@ import java.util.List;
 import java.util.Random;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JTextField;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class Board extends JPanel {
 	
@@ -55,6 +60,7 @@ public class Board extends JPanel {
     private Shot shot;
     private ArrayList<Shot> shots;
     
+    private int highScore = 1;
     private int deaths = 0;
     private int score = 0;
     private int fireFrequency = 1;
@@ -171,7 +177,7 @@ public class Board extends JPanel {
   	    alienSlider.setMajorTickSpacing(5);
   		alienSlider.setBounds(10, 216, 104, 44);
   		add(alienSlider);
-  		fireFrequency = 1; //shou l wade3
+  		fireFrequency = 1;
   		MyChangeListenerFiring lst = new MyChangeListenerFiring();
   	    alienSlider.addChangeListener(lst);
         //gameInit();
@@ -190,7 +196,7 @@ public class Board extends JPanel {
 		shotSlider.setMajorTickSpacing(5);
 		shotSlider.setBounds(240, 216, 104, 44);
 		add(shotSlider);
-		fireSpeed= 1; //shou l wade3
+		fireSpeed= 1; 
 		MyChangeListenerShot lst2 = new MyChangeListenerShot();
 		shotSlider.addChangeListener(lst2);
 		
@@ -209,11 +215,10 @@ public class Board extends JPanel {
 		numberSlider.setMajorTickSpacing(5);
 		numberSlider.setBounds(124, 219, 104, 39);
 		add(numberSlider);
-		numberOfTargets = 1; //shou l wade3
+		numberOfTargets = 1;
 		MyChangeListenerNumber lst3 = new MyChangeListenerNumber();
 		numberSlider.addChangeListener(lst3);
 		
-      //gameInit();
 		passwordField = new JPasswordField();
 		passwordField.setBounds(124, 126, 113, 19);
 		add(passwordField);
@@ -224,26 +229,93 @@ public class Board extends JPanel {
 		usernameField.setColumns(10);
     }
 
-
+    public static Connection getConnection(){
+        
+        Connection con = null;
+        try {
+            Class.forName("com.mysql.jdbc.Driver");
+            con = DriverManager.getConnection("jdbc:mysql://localhost:3306/clay_game", "root", "Conduitg3n3.");
+        } catch (Exception ex) {
+        	System.out.println("NO CON");
+            System.out.println(ex.getMessage());
+            System.out.println("test");
+        }
+        
+        return con;
+    }
+    
     private void logInLogOut() {
+    	PreparedStatement ps;
+        ResultSet rs;
+        String uname = usernameField.getText();
+        String pass = String.valueOf(passwordField.getText());
+        String query = "SELECT * FROM `users` WHERE `username` =? AND `password` =?";
+
 		if(!isLoggedIn) {
-			
-			if(usernameField.getText().equals("admin")) { //check for username in db
-				@SuppressWarnings("deprecation")
-				String password = passwordField.getText();
-				
-				if(password.equals("admin")) {//if password matches username
-					username = usernameField.getText();
-					isLoggedIn = true;
-					message = "Welcome to Tyro " + username;
-				}
-			}
-			usernameField.setText("");
-			passwordField.setText("");
-			if(!isLoggedIn) {
-				System.out.println("try again");
-			}
-		} else {
+	        try {
+	            ps = getConnection().prepareStatement(query);
+	            
+	            ps.setString(1, uname);
+	            ps.setString(2, pass);
+	            
+	            rs = ps.executeQuery();
+	            
+	            if(rs.next())
+	            {
+	                    isLoggedIn = true;
+						message = "Welcome to Tyro " + uname;
+						highScore = rs.getInt("highscore");
+	            }
+	            
+	            else{
+	            	query = "INSERT INTO users VALUES(?,?,0)";
+	            	int result = JOptionPane.showConfirmDialog(null,"No registered username or password. Create a new account?", "Uh Oh!",
+	                        JOptionPane.YES_NO_OPTION,
+	                        JOptionPane.QUESTION_MESSAGE);
+//	                    JOptionPane.showMessageDialog(null, "Incorrect Username Or Password", "Login Failed", 2);
+	                    if(result == JOptionPane.YES_OPTION){
+	                    	try {
+	        	            ps = getConnection().prepareStatement(query);
+
+	                    	ps.setString(1, uname);
+	        	            ps.setString(2, pass);
+	        	            ps.executeUpdate();
+	        	            isLoggedIn = true;
+							message = "Welcome to Tyro " + uname;
+							highScore = rs.getInt("highscore");
+
+
+	                    	}
+	                    	catch (SQLException ex) {
+	        		            System.out.println(ex);
+	        		        }
+	                    	
+	                     }
+	                    	
+	                    else {
+	                    }
+	            }
+		    } 
+	        catch (SQLException ex) {
+		            System.out.println(ex);
+		        }
+//			if(usernameField.getText().equals("admin")) { //check for username in db
+//				@SuppressWarnings("deprecation")
+//				String password = passwordField.getText();
+//				
+//				if(password.equals("admin")) {//if password matches username
+//					username = usernameField.getText();
+//					isLoggedIn = true;
+//					message = "Welcome to Tyro " + username;
+//				}
+//			}
+//			usernameField.setText("");
+//			passwordField.setText("");
+//			if(!isLoggedIn) {
+//				System.out.println("try again");
+//			}
+		} 
+	        else {
 			isLoggedIn = false;
 		
 		
@@ -445,7 +517,8 @@ public class Board extends JPanel {
     
     private void displayHighScore() {
 		// add logic to display high score
-    	scoreDisplay.setText("Highscore: ");
+    	
+    	scoreDisplay.setText("Highscore: " + highScore);
 	}
 
 	private void gameOver(Graphics g) {
