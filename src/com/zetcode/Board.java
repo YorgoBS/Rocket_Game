@@ -1,5 +1,6 @@
 package com.zetcode;
 
+import com.mysql.cj.protocol.Resultset;
 import com.zetcode.sprite.Alien;
 
 import com.zetcode.sprite.Player;
@@ -60,7 +61,9 @@ public class Board extends JPanel {
     private Shot shot;
     private ArrayList<Shot> shots;
     
-    private int highScore = 1;
+    private String uname ="";
+    private String pass = "";
+    private double highScore = 0;
     private int deaths = 0;
     private int score = 0;
     private int fireFrequency = 1;
@@ -148,7 +151,7 @@ public class Board extends JPanel {
         
         scoreDisplay = new JLabel("Score: ");
         scoreDisplay.setForeground(Color.GREEN);
-        scoreDisplay.setBounds(265, 10, 79, 13);
+        scoreDisplay.setBounds(240, 10, 100, 13);
         add(scoreDisplay);
         
         quitGameBtn = new JButton("Quit");
@@ -247,8 +250,8 @@ public class Board extends JPanel {
     private void logInLogOut() {
     	PreparedStatement ps;
         ResultSet rs;
-        String uname = usernameField.getText();
-        String pass = String.valueOf(passwordField.getText());
+        uname = usernameField.getText();
+        pass = String.valueOf(passwordField.getText());
         String query = "SELECT * FROM `users` WHERE `username` =? AND `password` =?";
 
 		if(!isLoggedIn) {
@@ -264,7 +267,7 @@ public class Board extends JPanel {
 	            {
 	                    isLoggedIn = true;
 						message = "Welcome to Tyro " + uname;
-						highScore = rs.getInt("highscore");
+						highScore = rs.getDouble("highscore");
 	            }
 	            
 	            else{
@@ -282,8 +285,6 @@ public class Board extends JPanel {
 	        	            ps.executeUpdate();
 	        	            isLoggedIn = true;
 							message = "Welcome to Tyro " + uname;
-							highScore = rs.getInt("highscore");
-
 
 	                    	}
 	                    	catch (SQLException ex) {
@@ -299,21 +300,6 @@ public class Board extends JPanel {
 	        catch (SQLException ex) {
 		            System.out.println(ex);
 		        }
-//			if(usernameField.getText().equals("admin")) { //check for username in db
-//				@SuppressWarnings("deprecation")
-//				String password = passwordField.getText();
-//				
-//				if(password.equals("admin")) {//if password matches username
-//					username = usernameField.getText();
-//					isLoggedIn = true;
-//					message = "Welcome to Tyro " + username;
-//				}
-//			}
-//			usernameField.setText("");
-//			passwordField.setText("");
-//			if(!isLoggedIn) {
-//				System.out.println("try again");
-//			}
 		} 
 	        else {
 			isLoggedIn = false;
@@ -512,14 +498,31 @@ public class Board extends JPanel {
     	scoreDisplay.setVisible(true);
     	passwordField.setVisible(false);
     	usernameField.setVisible(false);
-    	displayHighScore();
+		displayHighScore();
+
     }
     
     private void displayHighScore() {
 		// add logic to display high score
-    	
-    	scoreDisplay.setText("Highscore: " + highScore);
-	}
+    	String query = "SELECT * FROM `users` WHERE `username` =? AND `password` =?";
+    	PreparedStatement ps;
+    	ResultSet rs;
+    	try {
+			ps = getConnection().prepareStatement(query);
+	        
+	        ps.setString(1, uname);
+	        ps.setString(2, pass);
+	        
+	        rs = ps.executeQuery();
+	        while(rs.next()) {
+	        highScore = rs.getDouble("highscore");
+		    }
+    	}catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	    	scoreDisplay.setText("Highscore: " + highScore);
+		}
 
 	private void gameOver(Graphics g) {
     	if(!isLoggedIn) {
@@ -550,7 +553,7 @@ public class Board extends JPanel {
         
     }
 
-    private void update() {
+    private void update(){
     	//System.out.println(maxBullets);
     	scoreDisplay.setText("Score: " + score + "/" + shotsFired);
         if (deaths == numberOfTargets) {
@@ -559,10 +562,27 @@ public class Board extends JPanel {
         	double accuracy = (double)score / shotsFired;
         	Double truncatedAccuracy = BigDecimal.valueOf(accuracy)
             .setScale(3, RoundingMode.HALF_UP)
-            .doubleValue();
+            .doubleValue() * 100;
         	System.out.println(score);
-            message = "Your accuracy is: " + truncatedAccuracy ; 
-            displayHighScore();
+            message = "Your accuracy is: " + truncatedAccuracy + "%"; 
+            if(truncatedAccuracy > highScore) {
+            	try {
+            		PreparedStatement ps;
+                    String query = "update users set highscore=? where username=?";
+                    
+    	            ps = getConnection().prepareStatement(query);     
+    	            ps.setDouble(1, truncatedAccuracy);
+    	            ps.setString(2,uname);
+    	            ps.executeUpdate();
+                	}
+                	catch (SQLException ex) {
+    		            System.out.println(ex);
+    		        }
+            }
+            
+            
+			displayHighScore();
+
         }
         
         // player
