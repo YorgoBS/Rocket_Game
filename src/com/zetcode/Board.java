@@ -1,3 +1,4 @@
+
 package com.zetcode;
 
 import com.mysql.cj.protocol.Resultset;
@@ -39,7 +40,13 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
+/**
+ * This serves as the JFrame for the Clay Shooting Game
+ * 
+ * @author Toufic Lattouf and Yorgo Bou Samra
+ * @version 2.0
+ * 
+ */
 public class Board extends JPanel {
 	
 	private JButton newGameBtn;
@@ -122,7 +129,9 @@ public class Board extends JPanel {
 
 	
 	
-
+/**
+ * Initializer Function
+ */
     public Board() {
 
         initBoard();
@@ -130,7 +139,9 @@ public class Board extends JPanel {
         doGameCycle();
         
     }
-
+/**
+ * Initializes the game board
+ */
     private void initBoard() {
 
         addKeyListener(new TAdapter());
@@ -231,7 +242,10 @@ public class Board extends JPanel {
 		add(usernameField);
 		usernameField.setColumns(10);
     }
-
+/**
+ * Connects to the MySQL Database
+ * @return Connection entity
+ */
     public static Connection getConnection(){
         
         Connection con = null;
@@ -246,7 +260,9 @@ public class Board extends JPanel {
         
         return con;
     }
-    
+    /**
+     * The User Log in Functionality with MySQL - Allowing Log In and Creating Accounts
+     */
     private void logInLogOut() {
     	PreparedStatement ps;
         ResultSet rs;
@@ -275,7 +291,6 @@ public class Board extends JPanel {
 	            	int result = JOptionPane.showConfirmDialog(null,"No registered username or password. Create a new account?", "Uh Oh!",
 	                        JOptionPane.YES_NO_OPTION,
 	                        JOptionPane.QUESTION_MESSAGE);
-//	                    JOptionPane.showMessageDialog(null, "Incorrect Username Or Password", "Login Failed", 2);
 	                    if(result == JOptionPane.YES_OPTION){
 	                    	try {
 	        	            ps = getConnection().prepareStatement(query);
@@ -309,7 +324,9 @@ public class Board extends JPanel {
 		doGameCycle();
 		
 	}
-
+    /**
+     * Toggling Visibilities for the Log-In Screen
+     */
 	private void logInScreen() {
 		newGameBtn.setVisible(false);
 		quitGameBtn.setVisible(false);
@@ -326,7 +343,9 @@ public class Board extends JPanel {
     	passwordField.setVisible(true);
     	usernameField.setVisible(true);
 	}
-
+	/**
+	 * Quit Game Funcitonalitys
+	 */
 	private void quitGame() {
     	
 		if(inGame) {
@@ -337,7 +356,7 @@ public class Board extends JPanel {
 		}
 		
 	}
-
+	
 	private void settings() {
     	if(timer.isRunning()) {
     		timer.stop();
@@ -347,7 +366,9 @@ public class Board extends JPanel {
     		quitGameBtn.setVisible(false);
     	}
 	}
-
+	/**
+	 * New Game Initializer
+	 */
 	private void launchGame() {
     	if(!inGame) {
     		inGame = true;
@@ -365,7 +386,9 @@ public class Board extends JPanel {
     		
     	}
 	}
-	
+	/**
+	 * Toggle visibilities for in-game screen
+	 */
 	private void gameScreen() {
 		newGameBtn.setVisible(false);
 		quitGameBtn.setVisible(false);
@@ -384,10 +407,6 @@ public class Board extends JPanel {
 		gameScreen();
         
         aliens = new ArrayList<>();   
-//        var alien = new Alien(Commons.ALIEN_INIT_X  ,
-//                Commons.ALIEN_INIT_Y );
-//        aliens.add(alien);
-     
         
         username = null;
         player = new Player();
@@ -433,20 +452,7 @@ public class Board extends JPanel {
 	        }
 	    }
     }
-
-//    private void drawBombing(Graphics g) {
-//
-//        for (Alien a : aliens) {
-//
-//            Alien.Bomb b = a.getBomb();
-//
-//            if (!b.isDestroyed()) {
-//
-//                g.drawImage(b.getImage(), b.getX(), b.getY(), this);
-//            }
-//        }
-//    }
-
+    
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -482,7 +488,9 @@ public class Board extends JPanel {
 
         Toolkit.getDefaultToolkit().sync();
     }
-
+    /**
+     * Toggle visibilities for Title Main Screen
+     */
     private void titleScreen() {
     	newGameBtn.setVisible(true);
     	quitGameBtn.setVisible(true);
@@ -501,7 +509,9 @@ public class Board extends JPanel {
 		displayHighScore();
 
     }
-    
+    /**
+     * Allows for setting, updating, and displaying the current user's high score
+     */
     private void displayHighScore() {
 		// add logic to display high score
     	String query = "SELECT * FROM `users` WHERE `username` =? AND `password` =?";
@@ -518,12 +528,14 @@ public class Board extends JPanel {
 	        highScore = rs.getDouble("highscore");
 		    }
     	}catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	    	scoreDisplay.setText("Highscore: " + highScore);
 		}
-
+    /**
+     * Game Over Screen
+     * @param g Graphic
+     */
 	private void gameOver(Graphics g) {
     	if(!isLoggedIn) {
 			//add input logic
@@ -533,15 +545,10 @@ public class Board extends JPanel {
 			titleScreen();
 			
 		}
-    	//titleScreen();
     	
         g.setColor(Color.black);
         g.fillRect(0, 0, Commons.BOARD_WIDTH, Commons.BOARD_HEIGHT);
 
-//        g.setColor(new Color(0, 32, 48));
-//        g.fillRect(50, Commons.BOARD_WIDTH / 2 +80, Commons.BOARD_WIDTH - 100, 50);
-//        g.setColor(Color.white);
-        //g.drawRect(50, Commons.BOARD_WIDTH / 2 +80, Commons.BOARD_WIDTH - 100, 50);
 
         var small = new Font("Helvetica", Font.BOLD, 14);
         var fontMetrics = this.getFontMetrics(small);
@@ -552,9 +559,10 @@ public class Board extends JPanel {
                 Commons.BOARD_WIDTH /2 - 120);
         
     }
-
+	/**
+	 * Ongoing updater for in-game scores
+	 */
     private void update(){
-    	//System.out.println(maxBullets);
     	scoreDisplay.setText("Score: " + score + "/" + shotsFired);
         if (deaths == numberOfTargets) {
         	
@@ -650,26 +658,17 @@ public class Board extends JPanel {
         for (Alien alien : aliens) {
         	if(!alien.isVisible()) {
         		deaths++;
-        		//shots--;
         	}
         	
         	
-        		//System.out.println(timer.);
         	
             int x = alien.getX();
             //alien.act();
             if (x >= Commons.BOARD_WIDTH - Commons.BORDER_RIGHT && alien.angle > 0.0) {
 
-                //direction = -1;
                 alien.flip();
 
-//                Iterator<Alien> i1 = aliens.iterator();
-//
-//                while (i1.hasNext()) {
-//
-//                    Alien a2 = i1.next();
-//                    //a2.setY(a2.getY() + Commons.GO_DOWN);
-//                }
+
             }
 
             if (x <= Commons.BORDER_LEFT && alien.angle < 0.0) {
@@ -677,13 +676,7 @@ public class Board extends JPanel {
                 //direction = 1;
                 alien.flip();
 
-//                Iterator<Alien> i2 = aliens.iterator();
-//
-//                while (i2.hasNext()) {
-//
-//                    Alien a = i2.next();
-//                    //a.setY(a.getY() + Commons.GO_DOWN);
-//                }
+
             }
         }
 
@@ -698,12 +691,10 @@ public class Board extends JPanel {
                 int y = alien.getY();
 
                 if (y <= 0) {
-                    //inGame = false;
-                    //message = "Invasion!";
+
                 	alien.setDying(true);
                 	maxBullets-=2;
-                	//aliens.remove(alien);
-                	//System.out.println(alien.angle);
+
                 }
 
                 alien.act();
@@ -712,7 +703,9 @@ public class Board extends JPanel {
 
 
     }
-
+    /**
+     * Game resetter
+     */
     private void resetGame() {
 		deaths = 0;
 		//score = 0;
@@ -737,15 +730,23 @@ public class Board extends JPanel {
             doGameCycle();
         }
     }
-
+    /**
+     * Class to take care of keyboard inputs 
+     * 
+     *
+     */
     private class TAdapter extends KeyAdapter {
-
+    	/**
+    	 * key release
+    	 */
         @Override
         public void keyReleased(KeyEvent e) {
 
             player.keyReleased(e);
         }
-
+        /**
+         * key press register
+         */
         @Override
         public void keyPressed(KeyEvent e) {
 

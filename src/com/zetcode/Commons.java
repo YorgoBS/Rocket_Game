@@ -1,5 +1,9 @@
 package com.zetcode;
-
+/**
+ * Common board class (Not much functionality)
+ * @author Toufic Lattouf and Yorgo Bou Samra
+ *
+ */
 public interface Commons {
 
     int BOARD_WIDTH = 358;

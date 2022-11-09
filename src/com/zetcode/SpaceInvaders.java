@@ -2,7 +2,11 @@ package com.zetcode;
 
 import java.awt.EventQueue;
 import javax.swing.JFrame;
-
+/**
+ * Background Board Class
+ * @author Toufic Lattouf and Yorgo Bou Samra
+ *
+ */
 public class SpaceInvaders extends JFrame  {
 
     public SpaceInvaders() {

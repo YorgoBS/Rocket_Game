@@ -1,7 +1,13 @@
 package com.zetcode.sprite;
 
 import java.awt.Image;
-
+/**
+ * Sprite handler
+ * 
+ * @author Toufic Lattouf and Yorgo Bou Samra 
+ *  
+ *
+ */
 public class Sprite {
 
     private boolean visible;
@@ -11,7 +17,9 @@ public class Sprite {
     int x;
     int y;
     int dx;
-
+    /**
+     * Default Constructor
+     */
     public Sprite() {
 
         visible = true;
