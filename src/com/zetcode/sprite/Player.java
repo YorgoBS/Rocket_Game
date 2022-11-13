@@ -1,5 +1,6 @@
 package com.zetcode.sprite;
 
+import com.zetcode.Board;
 import com.zetcode.Commons;
 
 import javax.swing.ImageIcon;
@@ -62,7 +63,9 @@ public class Player extends Sprite {
     public void keyPressed(KeyEvent e) {
 
         int key = e.getKeyCode();
-
+        if(Board.getUsername().equals("automated")) {
+            return;
+        }
         if (key == KeyEvent.VK_LEFT) {
 
             dx = -3;

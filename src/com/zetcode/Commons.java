@@ -16,7 +16,7 @@ public interface Commons {
 
     int ALIEN_HEIGHT = 12;
     int ALIEN_WIDTH = 12;
-    int ALIEN_INIT_X = 150;
+    int ALIEN_INIT_X = BOARD_WIDTH/2;
     int ALIEN_INIT_Y = 250;
 
     int GO_DOWN = -1;

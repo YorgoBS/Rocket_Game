@@ -7,7 +7,7 @@ import javax.swing.ImageIcon;
  *
  */
 public class Shot extends Sprite {
-
+    Alien targetedAlien;
 	private int speed;
 	/**
 	 * default constructor
@@ -47,4 +47,15 @@ public class Shot extends Sprite {
 	public int getSpeed() {
 		return speed;
 	}
+
+    public void targetAlien(Alien alien) {
+        targetedAlien = alien;
+    }
+
+    public void move() {
+
+        this.x += targetedAlien.speed*Math.sin(Math.toRadians(targetedAlien.angle));
+        this.y -= (speed + (((double)5*targetedAlien.speed)/speed))*Math.cos(Math.toRadians(targetedAlien.angle));
+
+    }
 }

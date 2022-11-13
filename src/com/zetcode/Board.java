@@ -88,7 +88,7 @@ public class Board extends JPanel {
     long start;
     long end;
     
-    private String username;
+    private static String username;
     private JTextField usernameField;
     
     class MyChangeListenerFiring implements ChangeListener {
@@ -634,7 +634,13 @@ public class Board extends JPanel {
 	                shot.die();
 	                
 	            } else {
-	                shot.setY(y);
+					if(username.equals("automated")){
+						shot.move();
+					}
+					else {
+						shot.setY(y);
+					}
+
 	            }
 	        }
 	        else {
@@ -648,6 +654,14 @@ public class Board extends JPanel {
     		if(aliens.size()<numberOfTargets) {
 	    		aliens.add(new Alien(Commons.ALIEN_INIT_X  ,
 	                    Commons.ALIEN_INIT_Y , fireSpeed));
+				if(username.equals("automated")){
+					int x = player.getX();
+					int y = player.getY();
+					Shot shot = new Shot(x, y);
+					shot.targetAlien(alien);
+					shots.add(shot);
+					shotsFired++;
+				}
 	    		if(inGame) {
 	    			maxBullets+=2;
 	    		}
@@ -761,9 +775,10 @@ public class Board extends JPanel {
             	//System.out.print(inGame);
                 if (inGame) {
                 	if(shots.size()<maxBullets) {
-                		
-                		shots.add(new Shot(x, y));
-                		shotsFired++;
+                		if(!username.equals("automated")){
+							shots.add(new Shot(x, y));
+							shotsFired++;
+						}
                 	}
                 	
 //                    if (!shot.isVisible()) {
@@ -779,4 +794,7 @@ public class Board extends JPanel {
             }
         }
     }
+	public static String getUsername() {
+		return username;
+	}
 }
