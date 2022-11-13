@@ -1,7 +1,6 @@
 
 package com.zetcode;
 
-import com.mysql.cj.protocol.Resultset;
 import com.zetcode.sprite.Alien;
 
 import com.zetcode.sprite.Player;
@@ -40,6 +39,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.*;
+
 /**
  * This serves as the JFrame for the Clay Shooting Game
  * 
@@ -68,7 +69,7 @@ public class Board extends JPanel {
     private Shot shot;
     private ArrayList<Shot> shots;
     
-    private String uname ="";
+    private static String uname ="";
     private String pass = "";
     private double highScore = 0;
     private int deaths = 0;
@@ -248,36 +249,41 @@ public class Board extends JPanel {
  */
     public static Connection getConnection(){
         
-        Connection con = null;
+    	Connection c = null;
+        Statement stmt = null;
         try {
-            Class.forName("com.mysql.jdbc.Driver");
-            con = DriverManager.getConnection("jdbc:mysql://localhost:3306/clay_game", "root", "Conduitg3n3.");
-        } catch (Exception ex) {
-        	System.out.println("NO CON");
-            System.out.println(ex.getMessage());
-            System.out.println("test");
+           Class.forName("org.sqlite.JDBC");
+           c = DriverManager.getConnection("jdbc:sqlite:users.db");
+           stmt = c.createStatement();
+           String sql = "CREATE TABLE IF NOT EXISTS USERS (id INTEGER PRIMARY KEY AUTOINCREMENT,username TEXT NOT NULL,password TEXT NOT NULL,highscore DOUBLE NOT NULL);";
+           stmt.executeUpdate(sql);
+           stmt.close();
+        } catch ( Exception e ) {
+        	System.out.println("HERE");
+           System.err.println( e.getClass().getName() + ": " + e.getMessage() );
+           System.exit(0);
         }
-        
-        return con;
+        return c;
     }
     /**
      * The User Log in Functionality with MySQL - Allowing Log In and Creating Accounts
      */
     private void logInLogOut() {
-    	PreparedStatement ps;
-        ResultSet rs;
+    	
+    	Statement stmt = null;
+    	PreparedStatement pstmt = null;
         uname = usernameField.getText();
         pass = String.valueOf(passwordField.getText());
-        String query = "SELECT * FROM `users` WHERE `username` =? AND `password` =?";
+        String query = "SELECT * FROM `USERS` WHERE `username` =? AND `password` =?";
 
 		if(!isLoggedIn) {
+			
 	        try {
-	            ps = getConnection().prepareStatement(query);
-	            
-	            ps.setString(1, uname);
-	            ps.setString(2, pass);
-	            
-	            rs = ps.executeQuery();
+	        	Connection c = getConnection();
+	        	pstmt = c.prepareStatement(query);
+	        	pstmt.setString(1, uname);
+	        	pstmt.setString(2, pass);
+	            ResultSet rs = pstmt.executeQuery();
 	            
 	            if(rs.next())
 	            {
@@ -293,14 +299,16 @@ public class Board extends JPanel {
 	                        JOptionPane.QUESTION_MESSAGE);
 	                    if(result == JOptionPane.YES_OPTION){
 	                    	try {
-	        	            ps = getConnection().prepareStatement(query);
-
-	                    	ps.setString(1, uname);
-	        	            ps.setString(2, pass);
-	        	            ps.executeUpdate();
+	                    	String sql = "INSERT INTO USERS (id,username,password,highscore) " +
+                                        "VALUES (?,?,?,?);"; 
+	                    	pstmt = c.prepareStatement(sql);
+	                    	pstmt.setString(2, uname);
+	                    	pstmt.setString(3,pass);
+	                    	pstmt.setDouble(4, highScore);
+	         				pstmt.executeUpdate();
 	        	            isLoggedIn = true;
 							message = "Welcome to Tyro " + uname;
-
+	      
 	                    	}
 	                    	catch (SQLException ex) {
 	        		            System.out.println(ex);
@@ -308,9 +316,8 @@ public class Board extends JPanel {
 	                    	
 	                     }
 	                    	
-	                    else {
-	                    }
 	            }
+	            c.close();
 		    } 
 	        catch (SQLException ex) {
 		            System.out.println(ex);
@@ -344,7 +351,7 @@ public class Board extends JPanel {
     	usernameField.setVisible(true);
 	}
 	/**
-	 * Quit Game Funcitonalitys
+	 * Quit Game Functionality
 	 */
 	private void quitGame() {
     	
@@ -513,12 +520,14 @@ public class Board extends JPanel {
      * Allows for setting, updating, and displaying the current user's high score
      */
     private void displayHighScore() {
+    	Connection c = null;
 		// add logic to display high score
     	String query = "SELECT * FROM `users` WHERE `username` =? AND `password` =?";
     	PreparedStatement ps;
     	ResultSet rs;
     	try {
-			ps = getConnection().prepareStatement(query);
+			c = getConnection();
+			ps = c.prepareStatement(query);
 	        
 	        ps.setString(1, uname);
 	        ps.setString(2, pass);
@@ -526,8 +535,11 @@ public class Board extends JPanel {
 	        rs = ps.executeQuery();
 	        while(rs.next()) {
 	        highScore = rs.getDouble("highscore");
+	        
 		    }
-    	}catch (SQLException e) {
+	        c.close();
+    	}
+    	catch (SQLException e) {
 			e.printStackTrace();
 		}
 	    	scoreDisplay.setText("Highscore: " + highScore);
@@ -634,8 +646,12 @@ public class Board extends JPanel {
 	                shot.die();
 	                
 	            } else {
-	                shot.setY(y);
-	            }
+	            	if(uname.equals("automated")){
+						shot.move();
+					}
+					else {
+						shot.setY(y);
+					}	            }
 	        }
 	        else {
 	        	shots.remove(shot);
@@ -646,8 +662,16 @@ public class Board extends JPanel {
         end = System.currentTimeMillis();
     	if(end - start > 5000.0/fireFrequency) {
     		if(aliens.size()<numberOfTargets) {
-	    		aliens.add(new Alien(Commons.ALIEN_INIT_X  ,
-	                    Commons.ALIEN_INIT_Y , fireSpeed));
+    			Alien alien = new Alien(Commons.ALIEN_INIT_X, Commons.ALIEN_INIT_Y , fireSpeed);
+	    		aliens.add(alien);
+				if(uname.equals("automated")){
+					int x = player.getX();
+					int y = player.getY();
+					Shot shot = new Shot(x, y);
+					shot.targetAlien(alien);
+					shots.add(shot);
+					shotsFired++;
+				}
 	    		if(inGame) {
 	    			maxBullets+=2;
 	    		}
@@ -656,6 +680,7 @@ public class Board extends JPanel {
     	}
     	deaths = 0;
         for (Alien alien : aliens) {
+        	
         	if(!alien.isVisible()) {
         		deaths++;
         	}
@@ -758,12 +783,14 @@ public class Board extends JPanel {
             int key = e.getKeyCode();
 
             if (key == KeyEvent.VK_SPACE) {
+            	
             	//System.out.print(inGame);
                 if (inGame) {
                 	if(shots.size()<maxBullets) {
-                		
-                		shots.add(new Shot(x, y));
-                		shotsFired++;
+                		if(!uname.equals("automated")){
+							shots.add(new Shot(x, y));
+							shotsFired++;
+						}
                 	}
                 	
 //                    if (!shot.isVisible()) {
@@ -778,5 +805,8 @@ public class Board extends JPanel {
                 }
             }
         }
+    }
+    public static String getUsername(){
+    	return uname;
     }
 }
