@@ -40,7 +40,7 @@ public class Shot extends Sprite {
 	public void move() {
 		
 		this.x += targetedAlien.speed*Math.sin(Math.toRadians(targetedAlien.angle));
-		this.y -= (speed + (((double)5*targetedAlien.speed)/speed))*Math.cos(Math.toRadians(targetedAlien.angle));
+		this.y -= targetedAlien.speed*Math.cos(Math.toRadians(targetedAlien.angle)) + 1;
 
 	}
 }
