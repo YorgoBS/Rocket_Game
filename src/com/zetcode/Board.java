@@ -29,7 +29,6 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -48,6 +47,7 @@ import java.sql.*;
  * @version 2.0
  * 
  */
+@SuppressWarnings("serial")
 public class Board extends JPanel {
 	
 	private JButton newGameBtn;
