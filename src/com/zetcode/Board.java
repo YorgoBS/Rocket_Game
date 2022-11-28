@@ -1,19 +1,26 @@
 
 package com.zetcode;
 
+import com.zetcode.Board.MyChangeListenerFiring;
+import com.zetcode.Board.MyChangeListenerNumber;
+import com.zetcode.Board.MyChangeListenerShot;
 import com.zetcode.sprite.Alien;
 
 import com.zetcode.sprite.Player;
 import com.zetcode.sprite.Shot;
 
+import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
+import javax.swing.JScrollPane;
 import javax.swing.JSlider;
+import javax.swing.JTable;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.table.DefaultTableModel;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -24,7 +31,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -36,18 +45,14 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+
 import java.sql.*;
 
 /**
  * This serves as the JFrame for the Clay Shooting Game
  * 
  * @author Toufic Lattouf and Yorgo Bou Samra
- * @version 2.0
+ * @version 2.1
  * 
  */
 @SuppressWarnings("serial")
@@ -55,6 +60,7 @@ public class Board extends JPanel {
 
 	private JButton newGameBtn;
 	private JButton quitGameBtn;
+	private JButton leaderboardBtn;
 	private JButton logInLogOutBtn;
 	private JLabel pause;
 	private JLabel scoreDisplay;
@@ -85,6 +91,7 @@ public class Board extends JPanel {
 
 	private boolean inGame = false;
 	private boolean isLoggedIn = false;
+	private boolean isLeaderboard = false;
 	private String explImg = "src/images/explosion.png";
 	private String message = "Welcome to Tyro";
 
@@ -94,7 +101,15 @@ public class Board extends JPanel {
 
 	private String username;
 	private JTextField usernameField;
-
+	private JTable leaderboardTable;
+    private JScrollPane scrollPane;
+    private JButton backBtn;
+    private BufferedImage backImg;
+    /**
+     * Keeps track of fire slider
+     * 
+     *
+     */
 	class MyChangeListenerFiring implements ChangeListener {
 		/**
 		 * Default Constructor
@@ -106,7 +121,11 @@ public class Board extends JPanel {
 			fireFrequency = alienSlider.getValue();
 		}
 	}
-
+	/**
+     * Keeps track of shot slider
+     * 
+     *
+     */
 	class MyChangeListenerShot implements ChangeListener {
 		/**
 		 * Default Constructor
@@ -118,7 +137,11 @@ public class Board extends JPanel {
 			fireSpeed = shotSlider.getValue();
 		}
 	}
-
+	/**
+     * Keeps track of targets slider
+     * 
+     *
+     */
 	class MyChangeListenerNumber implements ChangeListener {
 		/**
 		 * Default Constructor
@@ -132,7 +155,7 @@ public class Board extends JPanel {
 	}
 
 	/**
-	 * Initializer Function
+	 * Initializer Function for Board
 	 */
 	public Board() {
 
@@ -143,7 +166,7 @@ public class Board extends JPanel {
 	}
 
 	/**
-	 * Initializes the game board
+	 * Initializes the game board parameters (buttons, layout, etc.)
 	 */
 	private void initBoard() {
 
@@ -155,7 +178,7 @@ public class Board extends JPanel {
 
 		newGameBtn = new JButton("New Game");
 		newGameBtn.addActionListener(e -> launchGame());
-		newGameBtn.setBounds(124, 94, 104, 21);
+		newGameBtn.setBounds(111, 94, 126, 21);
 		add(newGameBtn);
 
 		pause = new JLabel("Esc to Pause");
@@ -169,19 +192,19 @@ public class Board extends JPanel {
 		add(scoreDisplay);
 
 		quitGameBtn = new JButton("Quit");
-		quitGameBtn.setBounds(124, 125, 104, 21);
+		quitGameBtn.setBounds(111, 125, 126, 21);
 		quitGameBtn.addActionListener(e -> quitGame());
 		add(quitGameBtn);
 
 		logInLogOutBtn = new JButton("Logout");
-		logInLogOutBtn.setBounds(124, 156, 104, 21);
+		logInLogOutBtn.setBounds(111, 156, 126, 21);
 		logInLogOutBtn.addActionListener(e -> logInLogOut());
 		add(logInLogOutBtn);
 
 		// speed slider
 		fireFreqLabel = new JLabel("fire frequency: ");
 		fireFreqLabel.setForeground(Color.GREEN);
-		fireFreqLabel.setBounds(21, 200, 93, 21);
+		fireFreqLabel.setBounds(21, 229, 93, 21);
 		add(fireFreqLabel);
 		alienSlider = new JSlider(SwingConstants.HORIZONTAL, 1, 10, 1);
 		alienSlider.setBorder(null);
@@ -192,15 +215,14 @@ public class Board extends JPanel {
 		alienSlider.setPaintTicks(true);
 		alienSlider.setPaintLabels(true);
 		alienSlider.setMajorTickSpacing(10);
-		alienSlider.setBounds(10, 216, 104, 44);
+		alienSlider.setBounds(10, 245, 104, 44);
 		add(alienSlider);
 		fireFrequency = 1;
 		MyChangeListenerFiring lst = new MyChangeListenerFiring();
 		alienSlider.addChangeListener(lst);
-		// gameInit();
 		shotSpeedLabel = new JLabel("target speed: ");
 		shotSpeedLabel.setForeground(Color.GREEN);
-		shotSpeedLabel.setBounds(251, 200, 93, 21);
+		shotSpeedLabel.setBounds(251, 229, 93, 21);
 		add(shotSpeedLabel);
 		shotSlider = new JSlider(SwingConstants.HORIZONTAL, 1, 5, 1);
 		shotSlider.setBorder(null);
@@ -211,7 +233,7 @@ public class Board extends JPanel {
 		shotSlider.setPaintTicks(true);
 		shotSlider.setPaintLabels(true);
 		shotSlider.setMajorTickSpacing(5);
-		shotSlider.setBounds(240, 216, 104, 44);
+		shotSlider.setBounds(240, 245, 104, 44);
 		add(shotSlider);
 		fireSpeed = 1;
 		MyChangeListenerShot lst2 = new MyChangeListenerShot();
@@ -219,7 +241,7 @@ public class Board extends JPanel {
 
 		targetNumberLabel = new JLabel("target number: ");
 		targetNumberLabel.setForeground(Color.GREEN);
-		targetNumberLabel.setBounds(135, 200, 93, 21);
+		targetNumberLabel.setBounds(135, 229, 93, 21);
 		add(targetNumberLabel);
 		numberSlider = new JSlider(SwingConstants.HORIZONTAL, 1, 10, 1);
 		numberSlider.setBorder(null);
@@ -230,24 +252,57 @@ public class Board extends JPanel {
 		numberSlider.setPaintTicks(true);
 		numberSlider.setPaintLabels(true);
 		numberSlider.setMajorTickSpacing(5);
-		numberSlider.setBounds(124, 219, 104, 39);
+		numberSlider.setBounds(124, 248, 104, 39);
 		add(numberSlider);
 		numberOfTargets = 1;
 		MyChangeListenerNumber lst3 = new MyChangeListenerNumber();
 		numberSlider.addChangeListener(lst3);
 
 		passwordField = new JPasswordField();
-		passwordField.setBounds(124, 126, 113, 19);
+		passwordField.setBounds(111, 126, 126, 19);
 		add(passwordField);
 
 		usernameField = new JTextField();
-		usernameField.setBounds(124, 95, 113, 19);
+		usernameField.setBounds(111, 95, 126, 19);
 		add(usernameField);
 		usernameField.setColumns(10);
-	}
+		
+		leaderboardBtn = new JButton("Leaderboard");
+		leaderboardBtn.addActionListener(e -> leaderboardScreen());
+		leaderboardBtn.setBounds(111, 191, 126, 23);
+		add(leaderboardBtn);
+		
+		scrollPane = new JScrollPane();
+		scrollPane.setBackground(new Color(0, 0, 0));
+		scrollPane.setBounds(64, 76, 244, 179);
+		scrollPane.setOpaque(false);
+		scrollPane.getViewport().setOpaque(false);
+		add(scrollPane);
+		
+		leaderboardTable = new JTable();
+		leaderboardTable.setForeground(new Color(0, 255, 0));
+		leaderboardTable.setFont(new Font("Tahoma", Font.PLAIN, 12));
+		leaderboardTable.setGridColor(new Color(0, 255, 0));
+		leaderboardTable.setBackground(new Color(0, 0, 0));
+		scrollPane.setViewportView(leaderboardTable);
+		leaderboardTable.setModel(new DefaultTableModel(
+			new Object[][] {
+			},
+			new String[] {
+			}
+		));
+		
+		backBtn = new JButton("Back");
+		backBtn.addActionListener(e -> backTo());
+
+		backBtn.setBounds(128, 257, 89, 23);
+		add(backBtn);
+
+    }
+	
 
 	/**
-	 * Connects to the MySQL Database
+	 * Connects to the SQLite Database and creates table if not existent
 	 * 
 	 * @return Connection entity
 	 */
@@ -263,7 +318,6 @@ public class Board extends JPanel {
 			stmt.executeUpdate(sql);
 			stmt.close();
 		} catch (Exception e) {
-			System.out.println("HERE");
 			System.err.println(e.getClass().getName() + ": " + e.getMessage());
 			System.exit(0);
 		}
@@ -331,12 +385,21 @@ public class Board extends JPanel {
 		doGameCycle();
 
 	}
+	
+	/**
+	 * Back button to return to the title screen
+	 */
+	private void backTo() {
+    	isLeaderboard = false;
+    	message = "Welcome to Tyro " + uname;
+    }
 
 	/**
 	 * Toggling Visibilities for the Log-In Screen
 	 */
 	private void logInScreen() {
 		newGameBtn.setVisible(false);
+		leaderboardBtn.setVisible(false);
 		quitGameBtn.setVisible(false);
 		alienSlider.setVisible(false);
 		shotSlider.setVisible(false);
@@ -347,13 +410,83 @@ public class Board extends JPanel {
 		logInLogOutBtn.setVisible(true);
 		logInLogOutBtn.setText("Login");
 		pause.setVisible(false);
-		scoreDisplay.setVisible(false);
-		passwordField.setVisible(true);
-		usernameField.setVisible(true);
+    	scoreDisplay.setVisible(false);
+    	passwordField.setVisible(true);
+    	usernameField.setVisible(true);
+    	leaderboardTable.setVisible(false);
+    	scrollPane.setVisible(false);
+    	backBtn.setVisible(false);
+	}
+	
+	/**
+	 * Recieves highscores from database and displays them in leaderboard for top users
+	 */
+	private void leaderboardScreen() {
+		isLeaderboard = true;
+    	Statement stmt = null;
+    	PreparedStatement pstmt = null;
+        uname = usernameField.getText();
+        pass = String.valueOf(passwordField.getText());
+        String query = "SELECT username,highscore FROM `USERS` ORDER BY highscore DESC" ;
+        
+        try {
+        	Connection c = getConnection();
+        	pstmt = c.prepareStatement(query);
+            ResultSet rs = pstmt.executeQuery();
+            ResultSetMetaData rsmd = rs.getMetaData();
+            DefaultTableModel model = (DefaultTableModel) leaderboardTable.getModel();
+            
+            int cols = rsmd.getColumnCount();
+            String[] colname = new String[cols];
+            for(int i=0;i<cols;i++) {
+            	colname[i]=rsmd.getColumnName(i+1);
+            }
+            String user = null,userScore = null;
+            model.setColumnIdentifiers(colname);
+            model.setRowCount(0);
+            while(rs.next()) {
+            	user = rs.getString(1);
+            	userScore = rs.getString(2);
+            	 String[] row = {user,userScore};
+                 model.addRow(row);
+            }
+            
+        }
+            catch (SQLException ex) {
+	            System.out.println(ex);
+	        }
+       update();
+	}
+	
+	/**
+	 * Toggles visibilities of parameters for leaderboard screen
+	 */
+	private void leaderboardToggle() {
+		newGameBtn.setVisible(false);
+		leaderboardBtn.setVisible(false);
+		quitGameBtn.setVisible(false);
+		alienSlider.setVisible(false);
+		shotSlider.setVisible(false);
+		numberSlider.setVisible(false);
+		shotSpeedLabel.setVisible(false);
+		fireFreqLabel.setVisible(false);
+		targetNumberLabel.setVisible(false);
+		logInLogOutBtn.setVisible(false);
+		logInLogOutBtn.setText("Login");
+		pause.setVisible(false);
+    	scoreDisplay.setVisible(false);
+    	passwordField.setVisible(false);
+    	usernameField.setVisible(false);
+    	message = "LEADERBOARDS";
+    	leaderboardTable.setVisible(true);
+    	scrollPane.setVisible(true);
+    	backBtn.setVisible(true);
+
+
 	}
 
 	/**
-	 * Quit Game Functionality
+	 * Quit Game Functionality for both game and application
 	 */
 	private void quitGame() {
 
@@ -364,7 +497,10 @@ public class Board extends JPanel {
 		}
 
 	}
-
+	
+	/**
+	 * Allowing to quit game midway through
+	 */
 	private void settings() {
 		if (timer.isRunning()) {
 			timer.stop();
@@ -381,7 +517,6 @@ public class Board extends JPanel {
 	private void launchGame() {
 		if (!inGame) {
 			inGame = true;
-			// newGameBtn.setVisible(false);
 			timer = new Timer(Commons.DELAY, new GameCycle());
 			timer.start();
 			gameInit();
@@ -402,6 +537,7 @@ public class Board extends JPanel {
 	private void gameScreen() {
 		newGameBtn.setVisible(false);
 		quitGameBtn.setVisible(false);
+		leaderboardBtn.setVisible(false);
 		alienSlider.setVisible(false);
 		shotSlider.setVisible(false);
 		numberSlider.setVisible(false);
@@ -409,9 +545,14 @@ public class Board extends JPanel {
 		fireFreqLabel.setVisible(false);
 		targetNumberLabel.setVisible(false);
 		logInLogOutBtn.setVisible(false);
-
+    	leaderboardTable.setVisible(false);
+    	scrollPane.setVisible(false);
+    	backBtn.setVisible(false);
 	}
 
+	/**
+	 * Initializes the game settings when new game starts
+	 */
 	private void gameInit() {
 
 		gameScreen();
@@ -424,6 +565,10 @@ public class Board extends JPanel {
 		shots = new ArrayList<Shot>();
 	}
 
+	/**
+	 * Drawing the targets graphics
+	 * @param g
+	 */
 	private void drawAliens(Graphics g) {
 
 		for (Alien alien : aliens) {
@@ -439,7 +584,10 @@ public class Board extends JPanel {
 			}
 		}
 	}
-
+	/**
+	 * Drawing rocket graphics
+	 * @param g
+	 */
 	private void drawPlayer(Graphics g) {
 
 		if (player.isVisible()) {
@@ -454,6 +602,10 @@ public class Board extends JPanel {
 		}
 	}
 
+	/**
+	 * Drawing shot graphic
+	 * @param g
+	 */
 	private void drawShot(Graphics g) {
 		for (Shot shot : shots) {
 			if (shot.isVisible()) {
@@ -463,6 +615,10 @@ public class Board extends JPanel {
 		}
 	}
 	
+	/**
+	 * Drawing bomb graphic
+	 * @param g
+	 */
 	private void drawBombing(Graphics g) {
 
         for (Alien a : aliens) {
@@ -475,14 +631,21 @@ public class Board extends JPanel {
             }
         }
     }
-
+	/**
+	 * Utilizing paintComponent to draw graphics
+	 */
 	@Override
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
+//        g.drawImage(backImg, 0, 0, 450, 300, null);
 
-		doDrawing(g);
+		doDrawing(g);	
 	}
-
+	
+	/**
+	 * Main API for drawing all graphics
+	 * @param g
+	 */
 	private void doDrawing(Graphics g) {
 
 		g.setColor(Color.black);
@@ -516,19 +679,23 @@ public class Board extends JPanel {
 	 */
 	private void titleScreen() {
 		newGameBtn.setVisible(true);
-		quitGameBtn.setVisible(true);
-		logInLogOutBtn.setVisible(true);
-		logInLogOutBtn.setText("Logout");
-		alienSlider.setVisible(true);
-		shotSlider.setVisible(true);
-		numberSlider.setVisible(true);
-		shotSpeedLabel.setVisible(true);
+		leaderboardBtn.setVisible(true);
+    	quitGameBtn.setVisible(true);
+    	logInLogOutBtn.setVisible(true);
+    	logInLogOutBtn.setText("Logout");
+    	alienSlider.setVisible(true);
+    	shotSlider.setVisible(true);
+    	numberSlider.setVisible(true);
+    	shotSpeedLabel.setVisible(true);
 		fireFreqLabel.setVisible(true);
 		targetNumberLabel.setVisible(true);
-		pause.setVisible(false);
-		scoreDisplay.setVisible(true);
-		passwordField.setVisible(false);
-		usernameField.setVisible(false);
+    	pause.setVisible(false);
+    	scoreDisplay.setVisible(true);
+    	passwordField.setVisible(false);
+    	usernameField.setVisible(false);
+    	scrollPane.setVisible(false);
+    	backBtn.setVisible(false);
+    	
 		displayHighScore();
 
 	}
@@ -573,6 +740,10 @@ public class Board extends JPanel {
 			logInScreen();
 		} else {
 			titleScreen();
+
+			if(isLeaderboard) {
+				leaderboardToggle();
+			}
 
 		}
 
@@ -872,7 +1043,11 @@ public class Board extends JPanel {
 			}
 		}
 	}
-
+	
+	/**
+	 * Username Getter
+	 * @return username of current user
+	 */
 	public static String getUsername() {
 		return uname;
 	}
